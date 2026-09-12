@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pixel Wall Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background: #0f172a; color: #fff; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .header { text-align: center; margin-bottom: 20px; width: 100%; max-width: 360px; display: flex; justify-content: space-between; align-items: center; }
+        .title { font-size: 18px; font-weight: bold; }
+        .energy-badge { background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 6px 14px; border-radius: 20px; font-weight: bold; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 14px; }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+            background: #1e293b;
+            padding: 14px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: #334155;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .cell:active { transform: scale(0.92); }
+        .cell.occupied { background: #0284c7; border: 1px solid #38bdf8; }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(8px);
+        }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background: #1e293b; padding: 24px; border-radius: 20px; width: 90%; max-width: 340px; text-align: center; border: 1px solid #334155; }
+        
+        textarea { width: 100%; height: 90px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 12px; padding: 12px; margin: 14px 0; resize: none; font-size: 14px; }
+        
+        .btn { background: #38bdf8; color: #0f172a; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; font-size: 15px; }
+        .btn-close { background: #475569; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title">🗺️ Pixel Wall</div>
+        <div class="energy-badge">⚡ <span id="energy-val">3</span>/3</div>
+    </div>
+
+    <div class="grid-container" id="grid"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modal-title" style="color: #f8fafc;">Ячейка</h3>
+            <p id="modal-text" style="margin-top: 8px; color: #94a3b8; font-size: 14px; line-height: 1.4;"></p>
+            
+            <div id="create-form" style="display: none;">
+                <textarea id="note-input" placeholder="Оставьте тайну, признание или объявление..."></textarea>
+                <button class="btn" onclick="saveNote()">Оставить след (-1⚡)</button>
+            </div>
+            
+            <button class="btn btn-close" onclick="closeModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        if (tg) tg.expand();
+
+        let energy = 3;
+        let selectedCellIndex = null;
+        const notesData = JSON.parse(localStorage.getItem('pixel_wall_notes')) || {};
+        const gridEl = document.getElementById('grid');
+
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            for (let i = 0; i < 36; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell' + (notesData[i] ? ' occupied' : '');
+                cell.innerText = notesData[i] ? '📌' : (i + 1);
+                cell.onclick = () => openCell(i);
+                gridEl.appendChild(cell);
+            }
+        }
+
+        function openCell(index) {
+            selectedCellIndex = index;
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modal-title');
+            const text = document.getElementById('modal-text');
+            const form = document.getElementById('create-form');
+
+            title.innerText = `Ячейка #${index + 1}`;
+
+            if (notesData[index]) {
+                text.innerText = notesData[index];
+                form.style.display = 'none';
+            } else {
+                text.innerText = 'Эта ячейка свободна. Оставьте здесь свое анонимное послание!';
+                form.style.display = 'block';
+            }
+
+            modal.classList.add('active');
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function saveNote() {
+            const input = document.getElementById('note-input');
+            if (!input.value.trim()) return;
+
+            if (energy <= 0) {
+                alert('Энергия закончилась! Подождите восстановления.');
+                return;
+            }
+
+            energy--;
+            document.getElementById('energy-val').innerText = energy;
+            
+            notesData[selectedCellIndex] = input.value.trim();
+            localStorage.setItem('pixel_wall_notes', JSON.stringify(notesData));
+            
+            input.value = '';
+            closeModal();
+            renderGrid();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        renderGrid();
+    </script>
+</body>
+</html>
+
