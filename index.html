@@ -63,7 +63,6 @@
 
     const firebaseConfig = {
       databaseURL: "https://impulse-pn3unk-f885b-default-rtdb.firebaseio.com"
-
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -107,35 +106,46 @@
       const modal = document.getElementById('modal');
       const content = document.getElementById('modalContent');
       
-            if (energy <= 0) {
-        content.innerHTML = `
-          <h3>Закончилась энергия!</h3>
-          <p>Посмотрите короткую рекламу, чтобы получить +1 ⚡ энергии.</p>
-          <div class="btn-group">
-            <button onclick="watchAdForEnergy()">Смотреть рекламу (+1 ⚡)</button>
+      db.ref(`pixels/${index}`).once('value', (snapshot) => {
+        const pixel = snapshot.val();
+        if (pixel) {
+          content.innerHTML = `
+            <h3>Ячейка #${index + 1}</h3>
+            <div class="author-tag">Автор: ${pixel.author || 'Неизвестно'}</div>
+            <p>${pixel.text || 'Нет сообщения'}</p>
+            <button class="btn-danger" onclick="deleteNote()">Удалить (-1 ⚡)</button>
             <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
-          </div>
-        `;
-      } else {
-        content.innerHTML = `
-          <h3>Ячейка #${index + 1}</h3>
-          <input type="text" id="noteInput" placeholder="Оставьте сообщение..." maxlength="60">
-          <div class="color-picker">
-            <div class="color-opt selected" style="background:#0284c7" onclick="selectColor('blue', this)"></div>
-            <div class="color-opt" style="background:#16a34a" onclick="selectColor('green', this)"></div>
-            <div class="color-opt" style="background:#9333ea" onclick="selectColor('purple', this)"></div>
-            <div class="color-opt" style="background:#ea580c" onclick="selectColor('orange', this)"></div>
-            <div class="color-opt" style="background:#db2777" onclick="selectColor('pink', this)"></div>
-          </div>
-          <div class="btn-group">
-            <button onclick="saveNote()">Опубликовать (-1 ⚡)</button>
-            <button class="btn-secondary" onclick="closeModal()">Отмена</button>
-          </div>
-        `;
-      }
-      modal.style.display = 'flex';
-
-
+          `;
+        } else {
+          if (energy <= 0) {
+            content.innerHTML = `
+              <h3>Закончилась энергия!</h3>
+              <p>Посмотрите короткую рекламу, чтобы получить +1 ⚡ энергии.</p>
+              <div class="btn-group">
+                <button onclick="watchAdForEnergy()">Смотреть рекламу (+1 ⚡)</button>
+                <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
+              </div>
+            `;
+          } else {
+            content.innerHTML = `
+              <h3>Ячейка #${index + 1}</h3>
+              <input type="text" id="noteInput" placeholder="Оставьте сообщение..." maxlength="60">
+              <div class="color-picker">
+                <div class="color-opt selected" style="background:#0284c7" onclick="selectColor('blue', this)"></div>
+                <div class="color-opt" style="background:#16a34a" onclick="selectColor('green', this)"></div>
+                <div class="color-opt" style="background:#9333ea" onclick="selectColor('purple', this)"></div>
+                <div class="color-opt" style="background:#ea580c" onclick="selectColor('orange', this)"></div>
+                <div class="color-opt" style="background:#db2777" onclick="selectColor('pink', this)"></div>
+              </div>
+              <div class="btn-group">
+                <button onclick="saveNote()">Опубликовать (-1 ⚡)</button>
+                <button class="btn-secondary" onclick="closeModal()">Отмена</button>
+              </div>
+            `;
+          }
+        }
+        modal.style.display = 'flex';
+      });
     }
 
     function selectColor(color, el) {
@@ -168,26 +178,32 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-        function watchAdForEnergy() {
-      if (window.Adsgram) {
-        const AdController = window.Adsgram.init({ blockId: "47551" });
-        AdController.show().then((result) => {
-          energy += 1;
-          localStorage.setItem('gt_energy', energy);
-          updateEnergyUI();
-          closeModal();
-          alert("Вы получили +1 ⚡ энергии!");
-        }).catch((result) => {
-          console.log("Реклама не досмотрена или ошибка:", result);
-          alert("Не удалось загрузить рекламу. Попробуйте еще раз.");
-        });
+    function watchAdForEnergy() {
+      const AdsgramObj = window.Adsgram || window.AdsgramAd;
+      if (AdsgramObj) {
+        try {
+          const AdController = AdsgramObj.init({ blockId: "47551" });
+          AdController.show().then((result) => {
+            energy += 1;
+            localStorage.setItem('gt_energy', energy);
+            updateEnergyUI();
+            closeModal();
+            alert("Вы получили +1 ⚡ энергии!");
+          }).catch((result) => {
+            console.log("Реклама не досмотрена:", result);
+            alert("Реклама не была досмотрена до конца.");
+          });
+        } catch (e) {
+          console.error(e);
+          alert("Ошибка запуска рекламы. Проверьте подключение.");
+        }
       } else {
-        alert("Модуль рекламы еще не загрузился. Проверьте интернет или повторите через пару секунд.");
+        alert("Модуль рекламы заблокирован или еще загружается. Отключите VPN/AdBlock и попробуйте снова.");
       }
     }
-
   </script>
 </body>
 </html>
+
 
 
