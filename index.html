@@ -167,19 +167,24 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-    const AdController = window.Adsgram.init({ blockId: "47551" });
-
-    function watchAdForEnergy() {
-      AdController.show().then((result) => {
-        energy += 1;
-        localStorage.setItem('gt_energy', energy);
-        updateEnergyUI();
-        closeModal();
-        alert("Вы получили +1 энергия!");
-      }).catch((result) => {
-        console.log("Реклама не досмотрена", result);
-      });
+        function watchAdForEnergy() {
+      if (window.Adsgram) {
+        const AdController = window.Adsgram.init({ blockId: "47551" });
+        AdController.show().then((result) => {
+          energy += 1;
+          localStorage.setItem('gt_energy', energy);
+          updateEnergyUI();
+          closeModal();
+          alert("Вы получили +1 ⚡ энергии!");
+        }).catch((result) => {
+          console.log("Реклама не досмотрена или ошибка:", result);
+          alert("Не удалось загрузить рекламу. Попробуйте еще раз.");
+        });
+      } else {
+        alert("Модуль рекламы еще не загрузился. Проверьте интернет или повторите через пару секунд.");
+      }
     }
+
   </script>
 </body>
 </html>
