@@ -106,46 +106,35 @@
       const modal = document.getElementById('modal');
       const content = document.getElementById('modalContent');
       
-      db.ref(`pixels/${index}`).once('value', (snapshot) => {
-        const pixel = snapshot.val();
-        if (pixel) {
-          content.innerHTML = `
-            <h3>Ячейка #${index + 1}</h3>
-            <div class="author-tag">Автор: ${pixel.author || 'Неизвестно'}</div>
-            <p>${pixel.text || 'Нет сообщения'}</p>
-            <button class="btn-danger" onclick="deleteNote()">Удалить (-1 ⚡)</button>
+            if (energy <= 0) {
+        content.innerHTML = `
+          <h3>Закончилась энергия!</h3>
+          <p>Посмотрите короткую рекламу, чтобы получить +1 ⚡ энергии.</p>
+          <div class="btn-group">
+            <button onclick="watchAdForEnergy()">Смотреть рекламу (+1 ⚡)</button>
             <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
-          `;
-        } else {
-          if (energy <= 0) {
-            content.innerHTML = `
-              <h3>Закончилась энергия!</h3>
-              <p>Посмотрите короткую рекламу, чтобы получить +1 ⚡ энергии.</p>
-              <div class="btn-group">
-                <button onclick="watchAdForEnergy()">Смотреть рекламу (+1 ⚡)</button>
-                <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
-              </div>
-            `;
-          } else {
-            content.innerHTML = `
-              <h3>Ячейка #${index + 1}</h3>
-              <input type="text" id="noteInput" placeholder="Оставьте сообщение..." maxlength="60">
-              <div class="color-picker">
-                <div class="color-opt selected" style="background:#0284c7" onclick="selectColor('blue', this)"></div>
-                <div class="color-opt" style="background:#16a34a" onclick="selectColor('green', this)"></div>
-                <div class="color-opt" style="background:#9333ea" onclick="selectColor('purple', this)"></div>
-                <div class="color-opt" style="background:#ea580c" onclick="selectColor('orange', this)"></div>
-                <div class="color-opt" style="background:#db2777" onclick="selectColor('pink', this)"></div>
-              </div>
-              <div class="btn-group">
-                <button onclick="saveNote()">Опубликовать (-1 ⚡)</button>
-                <button class="btn-secondary" onclick="closeModal()">Отмена</button>
-              </div>
-            `;
-          }
-        }
-        modal.style.display = 'flex';
-      });
+          </div>
+        `;
+      } else {
+        content.innerHTML = `
+          <h3>Ячейка #${index + 1}</h3>
+          <input type="text" id="noteInput" placeholder="Оставьте сообщение..." maxlength="60">
+          <div class="color-picker">
+            <div class="color-opt selected" style="background:#0284c7" onclick="selectColor('blue', this)"></div>
+            <div class="color-opt" style="background:#16a34a" onclick="selectColor('green', this)"></div>
+            <div class="color-opt" style="background:#9333ea" onclick="selectColor('purple', this)"></div>
+            <div class="color-opt" style="background:#ea580c" onclick="selectColor('orange', this)"></div>
+            <div class="color-opt" style="background:#db2777" onclick="selectColor('pink', this)"></div>
+          </div>
+          <div class="btn-group">
+            <button onclick="saveNote()">Опубликовать (-1 ⚡)</button>
+            <button class="btn-secondary" onclick="closeModal()">Отмена</button>
+          </div>
+        `;
+      }
+      modal.style.display = 'flex';
+
+
     }
 
     function selectColor(color, el) {
