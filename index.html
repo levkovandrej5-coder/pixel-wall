@@ -184,26 +184,33 @@
         try {
           const AdController = AdsgramObj.init({ blockId: "47551" });
           AdController.show().then((result) => {
-            energy += 1;
-            localStorage.setItem('gt_energy', energy);
-            updateEnergyUI();
-            closeModal();
-            alert("Вы получили +1 ⚡ энергии!");
+            addEnergyAndClose();
           }).catch((result) => {
             console.log("Реклама не досмотрена:", result);
             alert("Реклама не была досмотрена до конца.");
           });
         } catch (e) {
           console.error(e);
-          alert("Ошибка запуска рекламы. Проверьте подключение.");
+          grantFallbackEnergy();
         }
       } else {
-        alert("Модуль рекламы заблокирован или еще загружается. Отключите VPN/AdBlock и попробуйте снова.");
+        grantFallbackEnergy();
       }
+    }
+
+    function grantFallbackEnergy() {
+      alert("Модуль рекламы заблокирован VPN/AdBlock. Вам начислена бонусная энергия!");
+      addEnergyAndClose();
+    }
+
+    function addEnergyAndClose() {
+      energy += 1;
+      localStorage.setItem('gt_energy', energy);
+      updateEnergyUI();
+      closeModal();
     }
   </script>
 </body>
 </html>
-
 
 
